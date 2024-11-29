@@ -1,3 +1,5 @@
+from copy import deepcopy as copy
+
 class Building:
     def __init__(self, outsideTemperature):
         """
@@ -34,7 +36,7 @@ class Building:
             self.totalEnergyUsed += newFloorEnergy
         
     def updateAverageComfort(self, floorUpdate=[]):
-        # If no floorUpdate is passed in, update it based on all floors
+        # If no floorUpdate is passed in, update it based on all floors that have occupants
         if floorUpdate == []:
             totalComfort = 0
             floorsWithOccupants = 0
@@ -45,12 +47,23 @@ class Building:
             self.averageComfort = totalComfort / floorsWithOccupants
         # If a specific floor is passed in, update it based only that floor
         else:
+            prevFloor = floorUpdate[0]
+            newFloor = floorUpdate[1]
             numFloors = len(self.floors)
-            prevFloorComfort = floorUpdate[0].comfort
-            newFloorComfort = floorUpdate[1].comfort
-            # Replaces old value in average with new value
-            self.averageComfort = (numFloors * self.averageComfort - prevFloorComfort + newFloorComfort) / numFloors
-            
+
+            # NOTE: This average updating stuff hasnt been thoroughly tested... beware of bugs
+            # Only update comfort on the floor if the floor has occupants, or 
+            if newFloor.numOccupants > 0:
+                # Replaces old value in average with new value
+                self.averageComfort = (numFloors * self.averageComfort - prevFloor.comfort + newFloor.comfort) / numFloors
+            # if the floor previously had occupants but now has 0, remove it from averageComfort
+            if (prevFloor.numOccupants > 0 and newFloor.numOccupants == 0):
+                # Remove floor comfort from average
+                self.averageComfort = ((self.averageComfort * numFloors) - prevFloor.comfort) / (numFloors - 1)
+
+    def getNumFloors(self):
+        return len(self.floors)            
+
 
 class Floor:
     def __init__(self, building, numOccupants=0, lightStatus=False, temperature=21, outsideTemperature=0):
@@ -115,17 +128,19 @@ class Floor:
         self.numOccupants -= 1
 
     def switchLights(self):
-        prev = self
+        prev = copy(self)
         self.lightStatus = not self.lightStatus
         self.calculateComfort()
         self.calculateEnergyUsage()
         new = self
         floorUpdate = [prev,new]
+        # Update building average comfort
         self.building.updateAverageComfort(floorUpdate)
+        # Update total building energy
         self.building.updateTotalEnergyUsed(floorUpdate)
 
     def increaseTemp(self):
-        prev = self
+        prev = copy(self)
         self.temperature += 1
         self.calculateComfort()
         self.calculateEnergyUsage()
@@ -135,7 +150,7 @@ class Floor:
         self.building.updateTotalEnergyUsed(floorUpdate)
 
     def decreaseTemp(self):
-        prev = self
+        prev = copy(self)
         self.temperature -= 1
         self.calculateComfort()
         self.calculateEnergyUsage()
@@ -144,16 +159,113 @@ class Floor:
         self.building.updateAverageComfort(floorUpdate)
         self.building.updateTotalEnergyUsed(floorUpdate)
         
-# TODO setup rewards/states/actions system in this class
+
 class Environment:
     def __init__(self, building):
-        
+        self.building = building
+        self.startingState = copy(building) # Create copy of memory so when changes to building occur we still retain the original building
+
         # Used to track how many actions have been taken since the start of the run.
-        self.numActionsTaken = 0
+        self.numStepsTaken = 0
+        self.terminated = False
 
+        self.actionSpace = []
+        self.numActions = 0
+        actionIndex = 1
+        for i in range(len(building.floors)):  # Add actions for each floor
+            self.numActions += 3
+            floorActions = [1,2,3]
+            self.actionSpace.append(floorActions)
+
+        print(self.numActions)
+        print(self.actionSpace)
+
+    # NOTE: This function's logic/values may need tweaking upon testing!
+    def computeReward(self, prevState):
+        totalReward = 0
+
+        # Increase rewards
+        # Did action improve on state, i.e. get closer to end goal?
+        if prevState.averageComfort < self.building.averageComfort:
+            totalReward += 0.1
+        if prevState.totalEnergyUsed > self.building.totalEnergyUsed:
+            totalReward += 0.1
+        # Did action reach an optimal state? big reward
+        if (self.building.totalEnergyUsed < self.building.expectedEnergyUsage):
+            reward += 1
+        if (self.building.averageComfort > 1.5):
+            reward += 1
         
-        # NOTE: Goal state will be when building.averageComfort > 1.5 and building.totalEnergyUsed < building.expectedEnergyUsage
+        # Decrease rewards
+        # If building is less than high comfort but higher than uncomfortable, drop rewards if comfort continues to decrease. No need to punish if comfort drops when its already in a high state.
+        if self.building.averageComfort < 2 and self.building.averageComfort > 1:
+            if prevState.averageComfort > self.building.averageComfort:
+                totalReward -= 0.1
+        # If the building average comfort is uncomfortable, bigger punishment
+        elif self.building.averageComfort < 1:
+            totalReward -= 1
 
-    # TODO
-    def computeReward():
-        return None
+        if prevState.totalEnergyUsed < self.building.totalEnergyUsed:
+            # If the difference between the totalEnergyUSed and the expectedEnergyUsage is greater or equal to 2 kW/h, bigger punishment 
+            # NOTE 2 is an arbitrary value, this may need tweaking!!
+            if (self.building.totalEnergyUsed - self.building.expectedEnergyUsage) > 2:
+                totalReward -= 1
+            # Otherwise, minor punishment for when action increases energy usage.
+            else:
+                totalReward -= 0.1
+            
+        return totalReward
+    
+    def reset(self):
+        self.numStepsTaken = 0
+        self.terminated = False
+        self.building = self.startingState
+
+        return self.building
+    
+    def isEpisodeFinished(self):
+        # This is the goal state
+        if (self.building.totalEnergyUsed < self.building.expectedEnergyUsage) and (self.building.averageComfort >= 1.5):
+            self.terminated = True
+            return self.terminated        
+        # This is to truncate runs after 500 steps.
+        elif (self.numStepsTaken > 500):
+            self.terminated = True
+            return self.terminated
+        
+        return False
+
+    def step(self, action):
+        # Copy building before changes are made from action. Used to calculate reward for action.
+        prevState = copy(self.building)
+
+        # action is in form [floornumber,actionnumber]
+        floorNum = action[0]
+        actionNum = action[1]
+
+        match actionNum:
+            # Agent does nothing for a step (maybe remove if causing problems?)
+            case 0:
+                actionFunc = None
+            # The rest area standard actions
+            case 1:
+                actionFunc = Floor.switchLights
+            case 2:
+                actionFunc = Floor.increaseTemp
+            case 3:
+                actionFunc = Floor.decreaseTemp            
+        
+        if actionFunc:
+            self.building.floors[floorNum].actionFunc()
+                
+        # Check if episode terminated after action
+        terminated = self.isEpisodeFinished()
+        if terminated:
+            # By convention, reaching goal state has reward of 0. NOTE: double check if this is true
+            reward = 0
+        else:
+            reward = self.computeReward(prevState)
+
+        #next_state, reward, terminated
+        return self.building, reward, terminated
+

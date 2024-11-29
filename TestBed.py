@@ -14,11 +14,23 @@ def main():
     building.addFloor(floor2)
     building.addFloor(floor3)
 
+    env = Environment(building)
+
+    thing = algo1(env, gamma=0.99, stepSize=0.01, maxEpisodes=400)
+    # Render environment
+    # TODO aaron gui function here
+
     print(f"External Temperature: {outsideTemp}, Total Building Energy Consumption: {building.totalEnergyUsed}, Average Building Comfort: {building.averageComfort}")
     # You can access the floors in the environment like this:
     for floor in building.floors:
         print(f"Floor occupants: {floor.numOccupants}, Lights: {floor.lightStatus}, Temperature: {floor.temperature}, Energy used: {floor.energyUsed}, Comfort: {floor.comfort}")
 
+# TODO implement algo functions. add hyperparameters as you see fit based on algorithm.
+def algo1(env, gamma, stepSize, maxEpisodes):
+    return
+
+def algo2(env, gamma, stepSize, maxEpisodes):
+    return
 
 if __name__ == "__main__":
     main()
