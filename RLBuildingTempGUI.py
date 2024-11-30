@@ -1,207 +1,247 @@
 import pygame
 import pygame_gui
 
-def drawScene(screen, buildingInfo, manager):
+def drawScene(buildingInfo, manager,buildingDetails):
 
-    skyBlue = pygame.Color('#87CEEB')
-    white = pygame.Color('#FFFFFF')
-    black = pygame.Color('#000000')
-    yellow = pygame.Color('#FFFF00')
-    grey = pygame.Color('#AAAAAA')
-    lightsOn = pygame.Color('#f4d26c')
-
+    #general building info + outdoor variable modifiers, displayed at top of gui
     dataLabels = {
        "Average Comfort": pygame_gui.elements.UILabel(
-            relative_rect=pygame.Rect((20, 20), (250, 50)), 
-            text=f"Average Comfort: {buildingInfo.averageComfort:.2f}",  
+            relative_rect=pygame.Rect((20,20),(250,50)),
+            text=f"Average Comfort: {buildingInfo.averageComfort:.1f}",
             manager=manager
         ),
         "Expected Energy": pygame_gui.elements.UILabel(
-            relative_rect=pygame.Rect((300, 20), (300, 50)), 
+            relative_rect=pygame.Rect((300,20),(300,50)),
             text=f"Expected Total Energy: {buildingInfo.ExpectedTotalBuildingEnergy:.2f} kW/h",
             manager=manager
         ),
         "Outside Temperature": pygame_gui.elements.UILabel(
-            relative_rect=pygame.Rect((600, 20), (200, 50)),
-            text=f"Outside Temperature: {buildingInfo.outsideTemperature}°C",  
+            relative_rect=pygame.Rect((600,20),(200,50)),
+            text=f"Outside Temperature: {buildingInfo.outsideTemperature}°C",
             manager=manager
         )
     }
 
+    #buttons to adjust outside temp, paired with data label above
     adjustButtons = {
         "Increase Outside Temp": pygame_gui.elements.UIButton(
-            relative_rect=pygame.Rect((650, 55), (50, 25)),  
+            relative_rect=pygame.Rect((650,55),(50,25)),
             text="+",
             manager=manager
         ),
         "Decrease Outside Temp": pygame_gui.elements.UIButton(
-            relative_rect=pygame.Rect((700, 55), (50, 25)), 
+            relative_rect=pygame.Rect((700,55),(50,25)),
             text="-",
             manager=manager
         )
-    } 
+    }
 
-    #calculate the y-coordinate for the first floor's controls (bottom floor)
-    first_floor_y = screen.get_height() - 100
-
-    #create labels and buttons for each floor
+    #dynamically creates lables and buttons for each floor
     for i, floor in enumerate(buildingInfo.floors):
-        floor_y = first_floor_y - i * 100  # determine spacing between floors here
-        floorHeight = 750 // len(buildingInfo.floors)
+        currFloorY = buildingDetails[3] - i* (buildingDetails[3]/len(buildingInfo.floors)) 
+        
+        #the inner floor label of energy consumption + comfort
         dataLabels[f"Floor {i+1} Data"] = pygame_gui.elements.UILabel(
-            relative_rect=pygame.Rect((120, floor_y - floorHeight), (350, 50)), #needs to be properly positioned at the top of the floor
+            relative_rect=pygame.Rect((120, currFloorY), (350, 50)),
             text=f"Floor {i+1} - Energy: {floor.energyUsed:.2f} kW/h - Comfort: {floor.comfort:.2f}",
             manager=manager
         )
+        
+        #overall floor label:
+        dataLabels[f"Floor {i+1}:"] = pygame_gui.elements.UILabel(
+            relative_rect=pygame.Rect((600, currFloorY-25), (150, 50)),
+            text=f"Floor {i+1} -",
+            manager=manager
+        )
+        
+        #next three are the occupants labels and buttons
         dataLabels[f"Floor {i+1} Occupants"] = pygame_gui.elements.UILabel(
-            relative_rect=pygame.Rect((625, floor_y), (150, 50)),  # Use floor_y
-            text=f"Floor {i+1} Occupants: {floor.numOccupants}",
+            relative_rect=pygame.Rect((625, currFloorY), (150, 50)),
+            text=f"Occupants: {floor.numOccupants}",
             manager=manager
         )
         adjustButtons[f"Floor {i+1} Occupants +"] = pygame_gui.elements.UIButton(
-            relative_rect=pygame.Rect((800, floor_y + 10), (50, 25)),  # Use floor_y + 10
+            relative_rect=pygame.Rect((800, currFloorY + 10), (50, 25)),
             text="+",
             manager=manager
         )
         adjustButtons[f"Floor {i+1} Occupants -"] = pygame_gui.elements.UIButton(
-            relative_rect=pygame.Rect((850, floor_y + 10), (50, 25)),  # Use floor_y + 10
+            relative_rect=pygame.Rect((850, currFloorY + 10), (50, 25)),
             text="-",
             manager=manager
         )
+        
+        #next three are the temperature labels and buttons
         dataLabels[f"Floor {i+1} Temp"] = pygame_gui.elements.UILabel(
-            relative_rect=pygame.Rect((625, floor_y + 50), (150, 50)),  # Use floor_y + 50
-            text=f"Floor {i+1} Temp: {floor.temperature}°C",
+            relative_rect=pygame.Rect((625, currFloorY +25), (150, 50)),
+            text=f"Temp: {floor.temperature}°C",
             manager=manager
         )
-        adjustButtons[f"Floor {i+1} Temp +"] = pygame_gui.elements.UIButton(  # New temperature increase button
-            relative_rect=pygame.Rect((900, floor_y + 10), (50, 25)),
+        adjustButtons[f"Floor {i+1} Temp +"] = pygame_gui.elements.UIButton(  
+            relative_rect=pygame.Rect((800, currFloorY +35), (50, 25)),
             text="+",
             manager=manager
         )
-        adjustButtons[f"Floor {i+1} Temp -"] = pygame_gui.elements.UIButton(  # New temperature decrease button
-            relative_rect=pygame.Rect((950, floor_y + 10), (50, 25)),
+        adjustButtons[f"Floor {i+1} Temp -"] = pygame_gui.elements.UIButton( 
+            relative_rect=pygame.Rect((850, currFloorY +35), (50, 25)),
             text="-",
             manager=manager
         )
+
+
+        #floor light toggle button
         adjustButtons[f"Floor {i+1} Lights"] = pygame_gui.elements.UIButton(
-            relative_rect=pygame.Rect((800, floor_y + 60), (100, 25)),  # Use floor_y + 60
+            relative_rect=pygame.Rect((800, currFloorY + 65), (100, 25)),
             text="Lights On" if floor.lightStatus else "Lights Off",
             manager=manager
         )
 
     return dataLabels, adjustButtons
 
-def drawUpdates(screen, buildingInfo):
-    """Draws the dynamic elements that need to be updated."""
+def drawUpdates(screen, buildingInfo,manager, buildingDetails):
+    
+    #start by filling the screen with the sky blue background, then draw the rest on top
+    screen.fill(pygame.Color('#87CEEB'))
 
-    ## --- Define building parameters ---
-    buildingX = 100
-    buildingY = 200
-    buildingWidth = 500
-    buildingHeight = 750
-    floorHeight = buildingHeight // len(buildingInfo.floors)
-    floorColors = [pygame.Color('#AAAAAA'), pygame.Color('#f4d26c')]  # grey, lightsOn 
-    yellow = pygame.Color('#FFFF00')
-    black = pygame.Color('#000000')  # Black color for borders
-
-    # --- Clear the ENTIRE screen ---
-    screen.fill(pygame.Color('#87CEEB'))  # Clear the entire screen 
-
-    # --- Draw the building ---
+    #dynamic building drawing:
     for i in range(len(buildingInfo.floors)):
-        floor_y = buildingY + i * floorHeight
         
-        # Determine floor color based on lightStatus
-        current_floor_color = floorColors[1] if buildingInfo.floors[i].lightStatus else floorColors[0] 
+        #dynamically spaces the floor based on the height of the building. 1000 is screen height, so it starts 
+        #by drawing the top floor downwards first.
+        floorSpacing = (925- buildingDetails[1])-(i*buildingDetails[4])
+
+        #properly color floor based on initial lighton status
+        if buildingInfo.floors[i].lightStatus:
+            lightsOn =buildingDetails[5][1]
+        else:
+            lightsOn = buildingDetails[5][0] 
         
-        # Draw floor with the determined color
-        pygame.draw.rect(screen, current_floor_color, (buildingX, floor_y, buildingWidth, floorHeight))
+        #draw the floor 
+        pygame.draw.rect(screen,lightsOn,(buildingDetails[0],floorSpacing,buildingDetails[2],buildingDetails[4]))
         
-        # Draw thick black border around the floor
-        border_rect = pygame.Rect(buildingX, floor_y, buildingWidth, floorHeight)
-        pygame.draw.rect(screen, black, border_rect, 4)  # 4 is the border thickness
+        #add black border around floor so floors can be decerned 
+        border=pygame.Rect(buildingDetails[0], floorSpacing, buildingDetails[2], buildingDetails[4])
+        pygame.draw.rect(screen, buildingDetails[5][2], border,4)
 
-        # No need to draw separate circles for lights anymore
+    #draw the sun in the corner !!! yay !!! mins and maxs in place otherwise gui will crash when decimal gets to a weird value
+    #causing teh yellow value in next line to not be within 0-255
+    sunTemp = min(1, max(0, (buildingInfo.outsideTemperature - 10) / 50))
 
-    # --- Draw the sun ---
-    temp_factor = min(1, max(0, (buildingInfo.outsideTemperature - 10) / 50))
-    sun_color = pygame.Color(255, int(255 * (1 - temp_factor)), 0)
-    pygame.draw.circle(screen, sun_color, (screen.get_width() - 50, 50), 30)
+    #max red, yellow is multiplied by a percentage based on how hot it is. like 255*0.85 for 216.75, or lots of yellow
+    #so very orange, or very hot. no green.
+    sunHue = pygame.Color(255, int(255 * (1 - sunTemp)), 0)
 
+    #draw the sun
+    pygame.draw.circle(screen, sunHue, (screen.get_width() - 50, 50), 30)
 
 def runGUI(buildingInfo):
+    
+    #init pygame
     pygame.init()
 
-    # Sets up the window
-    windowWidth = 1000
-    windowHeight = 1000
-    screen = pygame.display.set_mode((windowWidth, windowHeight))
+    #defines screen borders
+    screenWidth = 1000
+    screenHeight = 1000
+    screen=pygame.display.set_mode((screenWidth,screenHeight))
 
-    # Adds a little name for the application
-    pygame.display.set_caption('Reinforcement Learning - Building Temperature Control')
+    #defines the sizing of the building to make func calls cleaner and save rewriting these. makes it more dynamic
+    buildingX = 50
+    buildingY = 150
+    buildingWidth = 500
+    buildingHeight =850
+    floorHeight= buildingHeight // len(buildingInfo.floors)
 
-    # Defines the manager for gui
-    manager = pygame_gui.UIManager((windowWidth, windowHeight), 'theme.json')
+    #defines colours for building
+    buildingColours =[pygame.Color('#AAAAAA'), pygame.Color('#f4d26c'),pygame.Color('#000000')]
 
-    dataLabels, adjustButtons = drawScene(screen, buildingInfo, manager)  # Draw static elements once
+    #compile building details in array to make passing into dynamic drawing func. easier
+    buildingDetails = [buildingX,buildingY,buildingWidth,buildingHeight,floorHeight,buildingColours]
 
+    #adds a title for the application
+    pygame.display.set_caption('COMP4010 Project - Building Temperature Control')
+
+    #defines a manager for the gui
+    manager=pygame_gui.UIManager((screenWidth,screenHeight), 'theme.json')
+
+    #draw static elements here
+    dataLabels,adjustButtons =drawScene(buildingInfo,manager, buildingDetails)
+
+    #define a timer and running variable to check for program exit
     clock = pygame.time.Clock()
-    is_running = True
+    applicationRunning = True
 
-    while is_running:
-        time_delta = clock.tick(60)/1000.0
+    while applicationRunning:
+
+        #track time
+        timer = clock.tick(60)/1000.0
+
+        #event checker
         for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                is_running = False
 
-            # --- Handle button presses ---
+            #if event is quit... quit
+            if event.type==pygame.QUIT:
+                applicationRunning = False
+
+            #button handlers:
             if event.type == pygame_gui.UI_BUTTON_PRESSED:
+
+                #these two handle the outdoor temps
                 if event.ui_element == adjustButtons["Increase Outside Temp"]:
                     buildingInfo.outsideTemperature += 1
                     dataLabels["Outside Temperature"].set_text(f"Outside Temperature: {buildingInfo.outsideTemperature}°C")
-                    # No need to call drawUpdates() here, the sun will be redrawn in the main loop
 
                 elif event.ui_element == adjustButtons["Decrease Outside Temp"]:
                     buildingInfo.outsideTemperature -= 1
                     dataLabels["Outside Temperature"].set_text(f"Outside Temperature: {buildingInfo.outsideTemperature}°C")
-                    # No need to call drawUpdates() here
 
+                #these handle all floor buttons
                 else:
-                    # Handle floor-specific buttons
+                    
+                    #loop through all floors
                     for i in range(len(buildingInfo.floors)):
-                        if event.ui_element == adjustButtons[f"Floor {i+1} Occupants +"]:
-                            buildingInfo.floors[i].addOccupant()
-                            dataLabels[f"Floor {i+1} Occupants"].set_text(f"Floor {i+1} Occupants: {buildingInfo.floors[i].numOccupants}")
-                            
 
+                        #check if floor at i's occupants increased
+                        if event.ui_element==adjustButtons[f"Floor {i+1} Occupants +"]:
+                            buildingInfo.floors[i].addOccupant()
+                            dataLabels[f"Floor {i+1} Occupants"].set_text(f"Occupants: {buildingInfo.floors[i].numOccupants}")
+
+                        #check if floor at i's occupants decreased
                         elif event.ui_element == adjustButtons[f"Floor {i+1} Occupants -"]:
+                            #check we do not go lower than 0 people...
                             if buildingInfo.floors[i].numOccupants > 0:
                                 buildingInfo.floors[i].removeOccupant()
-                                dataLabels[f"Floor {i+1} Occupants"].set_text(f"Floor {i+1} Occupants: {buildingInfo.floors[i].numOccupants}")
+                                dataLabels[f"Floor {i+1} Occupants"].set_text(f"Occupants: {buildingInfo.floors[i].numOccupants}")
 
-                        if event.ui_element == adjustButtons[f"Floor {i+1} Temp +"]:  # Handle temp increase
+                        #check if the floor at i's temp increased
+                        if event.ui_element == adjustButtons[f"Floor {i+1} Temp +"]:
                             buildingInfo.floors[i].increaseTemp()
-                            dataLabels[f"Floor {i+1} Temp"].set_text(f"Floor {i+1} Temp: {buildingInfo.floors[i].temperature}°C")
-                            drawUpdates(screen, buildingInfo)  # Redraw to update comfort and energy
+                            dataLabels[f"Floor {i+1} Temp"].set_text(f"Temp: {buildingInfo.floors[i].temperature}°C")
+                            #drawUpdates(screen, buildingInfo)
 
-                        elif event.ui_element == adjustButtons[f"Floor {i+1} Temp -"]:  # Handle temp decrease
+                        #check if the floor at i's temp decreased
+                        elif event.ui_element == adjustButtons[f"Floor {i+1} Temp -"]:
                             buildingInfo.floors[i].decreaseTemp()
-                            dataLabels[f"Floor {i+1} Temp"].set_text(f"Floor {i+1} Temp: {buildingInfo.floors[i].temperature}°C")
-                            drawUpdates(screen, buildingInfo)  # Redraw
+                            dataLabels[f"Floor {i+1} Temp"].set_text(f"Temp: {buildingInfo.floors[i].temperature}°C")
+                            #drawUpdates(screen, buildingInfo)
                         
+                        #toggle floor at i's lights
                         elif event.ui_element == adjustButtons[f"Floor {i+1} Lights"]:
                             buildingInfo.floors[i].switchLights()
                             adjustButtons[f"Floor {i+1} Lights"].set_text(f"Lights {'On' if buildingInfo.floors[i].lightStatus else 'Off'}")
-                            drawUpdates(screen, buildingInfo)
+                            #draw light update
+                            drawUpdates(screen, buildingInfo,manager,buildingDetails)
 
+            #process events
             manager.process_events(event)
 
-        manager.update(time_delta)
+        #update the timers
+        manager.update(timer)
 
-        drawUpdates(screen, buildingInfo)  # Draw dynamic elements
+        #draw the dynamic elements
+        drawUpdates(screen, buildingInfo,manager,buildingDetails)
         
-        manager.draw_ui(screen)  # Draw the UI elements
+        #draw the ui elements
+        manager.draw_ui(screen)
 
+        #update the display
         pygame.display.update()
-
-    pygame.quit()
