@@ -12,13 +12,13 @@ class Building:
         self.totalEnergyUsed = 0
         self.averageComfort = 0
         self.outsideTemperature = outsideTemperature                
-        self.ExpectedTotalBuildingEnergy = 0
+        self.expectedEnergyUsage = 0
 
 
     def addFloor(self, floor):
         self.floors.append(floor)        
         # Expected energy used assumes lights on for all floors and all floors at comfortable temp. This can likely be tweaked, as this is related to the goal state in the environment.
-        self.ExpectedTotalBuildingEnergy = len(self.floors) * 0.5 + (len(self.floors) * (abs(self.outsideTemperature - 21) * 0.1))
+        self.expectedEnergyUsage = len(self.floors) * 0.5 + (len(self.floors) * (abs(self.outsideTemperature - 21) * 0.1))
         self.updateAverageComfort()        
         self.updateTotalEnergyUsed()
 
