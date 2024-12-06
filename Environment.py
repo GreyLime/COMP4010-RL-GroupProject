@@ -192,9 +192,9 @@ class Environment:
             totalReward += 0.1
         # Did action reach an optimal state? big reward
         if (self.building.totalEnergyUsed < self.building.expectedEnergyUsage):
-            reward += 1
+            totalReward += 1
         if (self.building.averageComfort > 1.5):
-            reward += 1
+            totalReward += 1
         
         # Decrease rewards
         # If building is less than high comfort but higher than uncomfortable, drop rewards if comfort continues to decrease. No need to punish if comfort drops when its already in a high state.
