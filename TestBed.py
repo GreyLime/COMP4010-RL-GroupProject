@@ -1,4 +1,6 @@
 from Environment import Environment, Building, Floor
+from algo1 import algo1
+from plot_results import plot_rewards
 
 def main():
     outsideTemp = 15
@@ -21,13 +23,21 @@ def main():
     # TODO aaron gui function here
 
     print(f"External Temperature: {outsideTemp}, Total Building Energy Consumption: {building.totalEnergyUsed}, Average Building Comfort: {building.averageComfort}")
+
+    #Algorithm 1# 
+    Q, total_rewards = algo1(env, gamma=0.99, stepSize=0.01, maxEpisodes=400, epsilon=0.1)
+
+    plot_rewards(total_rewards, title="Q-learning Performance for Building Temperature Control")
+    print("Performance graph saved as 'q_learning_performance.png'")
+
+    print(f"External Temperature: {outsideTemp}, Total Building Energy Consumption: {building.totalEnergyUsed:.2f}, Average Building Comfort: {building.averageComfort:.2f}")
+    #############
+    
     # You can access the floors in the environment like this:
     for floor in building.floors:
         print(f"Floor occupants: {floor.numOccupants}, Lights: {floor.lightStatus}, Temperature: {floor.temperature}, Energy used: {floor.energyUsed}, Comfort: {floor.comfort}")
 
-# TODO implement algo functions. add hyperparameters as you see fit based on algorithm.
-def algo1(env, gamma, stepSize, maxEpisodes):
-    return
+
 
 def algo2(env, gamma, stepSize, maxEpisodes):
     return
