@@ -1,5 +1,6 @@
 from Environment import Environment, Building, Floor
 from algo1 import algo1
+from algo2 import algo2
 from plot_results import plot_rewards
 
 def main():
@@ -18,7 +19,7 @@ def main():
 
     env = Environment(building)
 
-    thing = algo1(env, gamma=0.99, stepSize=0.01, maxEpisodes=400)
+    #thing = algo1(env, gamma=0.99, stepSize=0.01, maxEpisodes=400)
     # Render environment
     # TODO aaron gui function here
 
@@ -26,6 +27,9 @@ def main():
 
     #Algorithm 1# 
     Q, total_rewards = algo1(env, gamma=0.99, stepSize=0.01, maxEpisodes=400, epsilon=0.1)
+    
+    #Algorithm 2
+    #Q1, Q2, rewards = algo2(env, gamma=0.99, stepSize=0.01, maxEpisodes=400, alpha=0.1)
 
     plot_rewards(total_rewards, title="Q-learning Performance for Building Temperature Control")
     print("Performance graph saved as 'q_learning_performance.png'")
@@ -38,9 +42,6 @@ def main():
         print(f"Floor occupants: {floor.numOccupants}, Lights: {floor.lightStatus}, Temperature: {floor.temperature}, Energy used: {floor.energyUsed}, Comfort: {floor.comfort}")
 
 
-
-def algo2(env, gamma, stepSize, maxEpisodes):
-    return
 
 if __name__ == "__main__":
     main()
