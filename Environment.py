@@ -236,36 +236,23 @@ class Environment:
         return False
 
     def step(self, action):
-        # Copy building before changes are made from action. Used to calculate reward for action.
+        self.numStepsTaken += 1
         prevState = copy(self.building)
+        floorNum, actionNum = action
 
-        # action is in form [floornumber,actionnumber]
-        floorNum = action[0]
-        actionNum = action[1]
+        if actionNum == 0:
+            #Do nothing
+            pass
+        elif actionNum ==1:     
+            self.building.floors[floorNum].switchLights()
+        elif actionNum == 2:
+            self.building.floors[floorNum].increaseTemp()
+        elif actionNum == 3:
+            self.building.floors[floorNum].decreaseTemp()
 
-        match actionNum:
-            # Agent does nothing for a step (maybe remove if causing problems?)
-            case 0:
-                actionFunc = None
-            # The rest area standard actions
-            case 1:
-                actionFunc = Floor.switchLights
-            case 2:
-                actionFunc = Floor.increaseTemp
-            case 3:
-                actionFunc = Floor.decreaseTemp            
-        
-        if actionFunc:
-            self.building.floors[floorNum].actionFunc()
-                
-        # Check if episode terminated after action
-        terminated = self.isEpisodeFinished()
-        if terminated:
-            # By convention, reaching goal state has reward of 0. NOTE: double check if this is true
-            reward = 0
-        else:
-            reward = self.computeReward(prevState)
+        self.terminated = self.isEpisodeFinished()
+        reward = self.computeReward(prevState) if not self.terminated else 0
 
         #next_state, reward, terminated
-        return self.building, reward, terminated
+        return self.building, reward, self.terminated
 
