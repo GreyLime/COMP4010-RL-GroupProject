@@ -25,13 +25,13 @@ def main():
 
     print(f"External Temperature: {outsideTemp}, Total Building Energy Consumption: {building.totalEnergyUsed}, Average Building Comfort: {building.averageComfort}")
 
-    #Algorithm 1# 
+    #Algorithm 1 Q-learning 
     #Q, total_rewards = algo1(env, gamma=0.99, stepSize=0.01, maxEpisodes=400, epsilon=0.1)
     #plot_rewards(total_rewards, title="Q-learning Performance for Building Temperature Control")
     #print("Performance graph saved as 'q_learning_performance.png'")
     #print(f"External Temperature: {outsideTemp}, Total Building Energy Consumption: {building.totalEnergyUsed:.2f}, Average Building Comfort: {building.averageComfort:.2f}")
     
-    #Algorithm 2
+    #Algorithm 2 Soft Actor-Critic
     #Q1, Q2, rewards = algo2(env, gamma=0.99, stepSize=0.01, maxEpisodes=400, alpha=0.1)
 
     #Algorithm 3
