@@ -31,6 +31,8 @@ def main():
     #Algorithm 2
     #Q1, Q2, rewards = algo2(env, gamma=0.99, stepSize=0.01, maxEpisodes=400, alpha=0.1)
 
+    #Algorithm 3
+    #theta, total_rewards = algo3(env, gamma=0.99, stepSize=0.01, maxEpisodes=400)
     plot_rewards(total_rewards, title="Q-learning Performance for Building Temperature Control")
     print("Performance graph saved as 'q_learning_performance.png'")
 
