@@ -62,7 +62,20 @@ class Building:
                 self.averageComfort = ((self.averageComfort * numFloors) - prevFloor.comfort) / (numFloors - 1)
 
     def getNumFloors(self):
-        return len(self.floors)            
+        return len(self.floors)     
+
+    def resetBuilding(self):
+        outsideTemp = 15
+        building = Building(outsideTemperature=outsideTemp)
+
+        floor1 = Floor(building, numOccupants=1, lightStatus=True, temperature=22, outsideTemperature=outsideTemp)
+        floor2 = Floor(building, numOccupants=0, lightStatus=False, temperature=20, outsideTemperature=outsideTemp)
+        floor3 = Floor(building, numOccupants=5, lightStatus=True, temperature=25, outsideTemperature=outsideTemp)
+
+        building.addFloor(floor1)
+        building.addFloor(floor2)
+        building.addFloor(floor3)       
+        return building
 
 
 class Floor:
@@ -90,6 +103,7 @@ class Floor:
         self.calculateEnergyUsage()
 
     def calculateComfort(self):
+        self.comfort = 0
         # -1 is used when no occupants are on the floor, so that the comfort for that floor can be disregarded
         if self.numOccupants == 0:
             self.comfort = -1
@@ -115,6 +129,8 @@ class Floor:
                 self.comfort = 0
         
     def calculateEnergyUsage(self):
+        self.energyUsed = 0
+        
         if self.lightStatus:
             self.energyUsed += 0.5
 
@@ -219,7 +235,7 @@ class Environment:
     def reset(self):
         self.numStepsTaken = 0
         self.terminated = False
-        self.building = self.startingState
+        self.building = Building.resetBuilding(self.building)
 
         return self.building
     

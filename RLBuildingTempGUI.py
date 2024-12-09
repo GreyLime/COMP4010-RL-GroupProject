@@ -1,8 +1,12 @@
 import pygame
 import pygame_gui
+import queue
 
 def drawScene(buildingInfo, manager,buildingDetails):
 
+    # Kill all existing UI elements
+    manager.clear_and_reset()
+    
     #general building info + outdoor variable modifiers, displayed at top of gui
     dataLabels = {
        "Average Comfort": pygame_gui.elements.UILabel(
@@ -12,7 +16,7 @@ def drawScene(buildingInfo, manager,buildingDetails):
         ),
         "Expected Energy": pygame_gui.elements.UILabel(
             relative_rect=pygame.Rect((300,20),(300,50)),
-            text=f"Expected Total Energy: {buildingInfo.ExpectedTotalBuildingEnergy:.2f} kW/h",
+            text=f"Expected Total Energy: {buildingInfo.expectedEnergyUsage:.2f} kW/h",
             manager=manager
         ),
         "Outside Temperature": pygame_gui.elements.UILabel(
@@ -41,11 +45,18 @@ def drawScene(buildingInfo, manager,buildingDetails):
         currFloorY = buildingDetails[3] - i* (buildingDetails[3]/len(buildingInfo.floors)) 
         
         #the inner floor label of energy consumption + comfort
-        dataLabels[f"Floor {i+1} Data"] = pygame_gui.elements.UILabel(
-            relative_rect=pygame.Rect((120, currFloorY), (350, 50)),
-            text=f"Floor {i+1} - Energy: {floor.energyUsed:.2f} kW/h - Comfort: {floor.comfort:.2f}",
-            manager=manager
-        )
+        if floor.comfort < 1:
+            dataLabels[f"Floor {i+1} Data"] = pygame_gui.elements.UILabel(
+                relative_rect=pygame.Rect((120, currFloorY), (350, 50)),            
+                text=f"Floor {i+1} - Energy: {floor.energyUsed:.2f} kW/h - Comfort: N/A",
+                manager=manager
+            )
+        else:
+            dataLabels[f"Floor {i+1} Data"] = pygame_gui.elements.UILabel(
+                relative_rect=pygame.Rect((120, currFloorY), (350, 50)),            
+                text=f"Floor {i+1} - Energy: {floor.energyUsed:.2f} kW/h - Comfort: {floor.comfort:.2f}",
+                manager=manager
+            )
         
         #overall floor label:
         dataLabels[f"Floor {i+1}:"] = pygame_gui.elements.UILabel(
@@ -134,7 +145,7 @@ def drawUpdates(screen, buildingInfo,manager, buildingDetails):
     #draw the sun
     pygame.draw.circle(screen, sunHue, (screen.get_width() - 50, 50), 30)
 
-def runGUI(buildingInfo):
+def runGUI(buildingInfo, gui_queue):
     
     #init pygame
     pygame.init()
@@ -234,6 +245,19 @@ def runGUI(buildingInfo):
             #process events
             manager.process_events(event)
 
+        try:
+            # Check for updates from the algorithm
+            update = gui_queue.get_nowait()
+            if update is None:
+                applicationRunning = False
+            else:
+                # Update the building state
+                buildingInfo = update
+                manager.clear_and_reset()  # Clear UI before redrawing
+                dataLabels, adjustButtons = drawScene(buildingInfo, manager, buildingDetails)
+        except queue.Empty:
+            pass
+
         #update the timers
         manager.update(timer)
 
@@ -245,3 +269,6 @@ def runGUI(buildingInfo):
 
         #update the display
         pygame.display.update()
+
+    pygame.quit()
+
