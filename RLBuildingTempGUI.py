@@ -51,7 +51,7 @@ def drawScene(buildingInfo, manager,buildingDetails):
             
         dataLabels[f"Floor {i+1} Data"] = pygame_gui.elements.UILabel(
             relative_rect=pygame.Rect((120, currFloorY), (350, 50)),            
-            text=f"Floor {i+1} - Energy: {floor.energyUsed:.2f} kW/h - Comfort: {floor.comfort:.2f}",
+            text=f"Floor {i+1} - Energy: {floor.energyUsed:.2f} kW/h - Comfort: {comfort:.2f}",
             manager=manager
         )
         
