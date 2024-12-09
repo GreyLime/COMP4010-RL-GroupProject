@@ -45,18 +45,15 @@ def drawScene(buildingInfo, manager,buildingDetails):
         currFloorY = buildingDetails[3] - i* (buildingDetails[3]/len(buildingInfo.floors)) 
         
         #the inner floor label of energy consumption + comfort
+        comfort = floor.comfort
         if floor.comfort < 1:
-            dataLabels[f"Floor {i+1} Data"] = pygame_gui.elements.UILabel(
-                relative_rect=pygame.Rect((120, currFloorY), (350, 50)),            
-                text=f"Floor {i+1} - Energy: {floor.energyUsed:.2f} kW/h - Comfort: N/A",
-                manager=manager
-            )
-        else:
-            dataLabels[f"Floor {i+1} Data"] = pygame_gui.elements.UILabel(
-                relative_rect=pygame.Rect((120, currFloorY), (350, 50)),            
-                text=f"Floor {i+1} - Energy: {floor.energyUsed:.2f} kW/h - Comfort: {floor.comfort:.2f}",
-                manager=manager
-            )
+            comfort = 0
+            
+        dataLabels[f"Floor {i+1} Data"] = pygame_gui.elements.UILabel(
+            relative_rect=pygame.Rect((120, currFloorY), (350, 50)),            
+            text=f"Floor {i+1} - Energy: {floor.energyUsed:.2f} kW/h - Comfort: {floor.comfort:.2f}",
+            manager=manager
+        )
         
         #overall floor label:
         dataLabels[f"Floor {i+1}:"] = pygame_gui.elements.UILabel(
